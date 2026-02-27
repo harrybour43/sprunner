@@ -139,7 +139,6 @@
             document.getElementById('screen-char').style.display = 'flex';
         }
 
-        // --- SISTEMA DE JOGO ---
         let gameActive = false;
         let phase = 'ida'; 
         let timer = 120; 
@@ -148,7 +147,6 @@
 
         let playerStats = { money: 0, health: 100, stamina: 100, baseSpeed: 0, reaction: 0, bagPenalty: 1, bumps: 0, hasBackpack: false, inventory: "Vazio" };
 
-        // Inputs Híbridos (Teclado + Tela)
         const keys = { Left: false, Right: false, Up: false, Space: false };
         
         window.addEventListener('keydown', (e) => updateKeys(e.code, true));
@@ -157,11 +155,10 @@
         function updateKeys(code, isPressed) {
             if(code === 'ArrowLeft') keys.Left = isPressed;
             if(code === 'ArrowRight') keys.Right = isPressed;
-            if(code === 'ArrowUp') keys.Up = isPressed; // Sprint
-            if(code === 'Space') keys.Space = isPressed; // Pulo
+            if(code === 'ArrowUp') keys.Up = isPressed;
+            if(code === 'Space') keys.Space = isPressed;
         }
 
-        // Mapeando botões da tela
         function bindTouch(id, code) {
             const btn = document.getElementById(id);
             const press = (e) => { e.preventDefault(); updateKeys(code, true); };
@@ -177,7 +174,6 @@
         bindTouch('btn-jump', 'Space');
         bindTouch('btn-sprint', 'ArrowUp');
 
-        // --- THREE.JS SETUP ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x222233);
         scene.fog = new THREE.Fog(0x222233, 50, 150);
@@ -216,7 +212,6 @@
                 const isSolid = Math.random() > 0.6;
                 const obs = new THREE.Mesh(new THREE.BoxGeometry(1.5, isSolid ? 3 : 2, 1.5), isSolid ? solidMat : npcMat);
                 
-                // 15% de chance de um NPC ser um ladrão (visualmente idêntico)
                 const isThief = !isSolid && Math.random() < 0.15; 
                 
                 obs.userData = { type: isSolid ? 'solid' : 'npc', isThief: isThief, hit: false };
@@ -230,11 +225,10 @@
         let isJumping = false;
         let velocityY = 0;
 
-        // --- LÓGICA DE INÍCIO ---
         function startGame(difficulty) {
             document.getElementById('screen-char').style.display = 'none';
             document.getElementById('hud').style.display = 'block';
-            document.getElementById('mobile-controls').style.display = 'flex'; // Mostra controles na tela
+            document.getElementById('mobile-controls').style.display = 'flex';
 
             if (difficulty === 'facil') {
                 playerStats = { money: 20, health: 100, stamina: 100, baseSpeed: 0.75, reaction: 0.2, bagPenalty: 1, bumps: 0, hasBackpack: true, inventory: "Mochila Vazia" };
@@ -312,21 +306,14 @@
             document.getElementById('hud').style.display = 'none';
             document.getElementById('mobile-controls').style.display = 'none';
             
-            // Finais dinâmicos baseados no inventário
             if (title === "VITÓRIA!") {
                 document.getElementById('end-title').style.color = "#00ff00";
-                if (playerStats.inventory.includes("Pães") || playerStats.inventory.includes("Sacola")) {
-                    desc = "Sucesso! Você garantiu o café da manhã!";
-                } else {
-                    document.getElementById('end-title').innerText = "SOBREVIVEU...";
-                    document.getElementById('end-title').style.color = "#ffff00";
-                    desc = "Você voltou pra casa, mas sem os pães. A família ficou triste.";
-                }
+            } else if (title === "SOBREVIVEU...") {
+                document.getElementById('end-title').style.color = "#ffff00";
             } else {
                 document.getElementById('end-title').style.color = "#ff3333";
             }
 
-            document.getElementById('end-title').innerText = title === "VITÓRIA!" && !desc.includes("Sucesso") ? "SOBREVIVEU" : title;
             document.getElementById('end-title').innerText = title;
             document.getElementById('end-desc').innerText = desc;
             document.getElementById('screen-gameover').style.display = 'flex';
@@ -338,11 +325,12 @@
 
             if (isStunned) {
                 renderer.render(scene, camera);
-                return; // Pausa o movimento se estiver assaltado
+                return; 
             }
 
-            if (keys.Left && currentLane > -1) { currentLane = -1; keys.Left = false; }
-            if (keys.Right && currentLane < 1) { currentLane = 1; keys.Right = false; }
+            // CORREÇÃO DOS TRILHOS AQUI: Move uma faixa por vez
+            if (keys.Left && currentLane > -1) { currentLane--; keys.Left = false; }
+            if (keys.Right && currentLane < 1) { currentLane++; keys.Right = false; }
             
             playerMesh.position.x += (currentLane * 3.5 - playerMesh.position.x) * playerStats.reaction;
 
@@ -366,8 +354,16 @@
             camera.lookAt(playerMesh.position.x, playerMesh.position.y, playerMesh.position.z - 5);
 
             if (playerMesh.position.z <= goalMesh.position.z + 3) {
-                if (phase === 'ida') handleBakery();
-                else endGame("VITÓRIA!", "");
+                if (phase === 'ida') {
+                    handleBakery();
+                } else {
+                    // VERIFICAÇÃO FINAL: Com pão é Vitória, sem pão é Sobrevivência
+                    if (playerStats.inventory.includes("Pães") || playerStats.inventory.includes("Sacola")) {
+                        endGame("VITÓRIA!", "Sucesso! Você garantiu o café da manhã!");
+                    } else {
+                        endGame("SOBREVIVEU...", "Você voltou vivo, mas sem os pães. O dia seguinte será mais difícil.");
+                    }
+                }
             }
 
             obstacles.forEach(obs => {
@@ -376,7 +372,6 @@
                     obs.userData.hit = true;
                     
                     if (obs.userData.isThief) {
-                        // Lógica do Ladrão
                         isStunned = true;
                         playerStats.money = 0;
                         playerStats.inventory = playerStats.hasBackpack ? "Mochila (Vazia)" : "Bolsos (Vazios)";
@@ -393,7 +388,7 @@
                         playerStats.health -= 25;
                         showMessage("AI! Bateu no poste!", 1000);
                         playerMesh.position.z += 3;
-                        if (playerStats.health <= 0) endGame("Você desmaiou", "Bateu a cabeça forte demais.");
+                        if (playerStats.health <= 0) endGame("Game Over", "Bateu a cabeça forte demais. Você desmaiou.");
                     }
                 }
             });
