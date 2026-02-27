@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runner SP: Missão Padaria</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #000;
+        }
+        #ui { 
+            position: absolute; 
+            top: 20px; 
+            left: 20px; 
+            color: white; 
+            background: rgba(0,0,0,0.8); 
+            padding: 15px 25px; 
+            border-radius: 8px; 
+            border: 1px solid #333;
+        }
+        h3 { margin-top: 0; color: #f0b429; }
+        p { margin: 5px 0; font-size: 14px; }
+        #game-over { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            color: white; 
+            background: rgba(0,0,0,0.95); 
+            padding: 30px; 
+            border-radius: 10px; 
+            display: none; 
+            text-align: center; 
+            border: 2px solid #555;
+        }
+        button { 
+            margin-top: 15px; 
+            padding: 10px 20px; 
+            cursor: pointer; 
+            background: #f0b429; 
+            border: none; 
+            border-radius: 5px; 
+            font-weight: bold;
+        }
+        button:hover { background: #d09b24; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h3>📍 Rumo à Padaria (Santa Cecília)</h3>
+        <p><b>Objetivo:</b> 10 pães e 2L de leite.</p>
+        <p><b>Controles:</b> ⬅️ ➡️ (Desviar) | ⬆️ (Pular)</p>
+        <p><b>Inventário:</b> Cartão de Transporte, Mochila Vazia</p>
+    </div>
+
+    <div id="game-over">
+        <h2 id="end-message">Fim de Jogo</h2>
+        <button onclick="location.reload()">Tentar Novamente</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+        // 1. CONFIGURAÇÃO BÁSICA
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Cor do céu
+        scene.fog = new THREE.Fog(0x87CEEB, 50, 150); // Efeito de neblina urbana
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Iluminação
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(10, 20, 10);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x606060));
+
+        // 2. CRIANDO O CENÁRIO
+        // O Asfalto
+        const groundGeometry = new THREE.PlaneGeometry(30, 2000);
+        const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.z = -500;
+        scene.add(ground);
+
+        // 3. CRIANDO O PERSONAGEM (Você)
+        const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
+        const playerMaterial = new THREE.MeshLambertMaterial({ color: 0x0088ff });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.y = 1;
+        scene.add(player);
+
+        // 4. CRIANDO OS OBSTÁCULOS
+        const obstacles = [];
+        const obstacleGeo = new THREE.BoxGeometry(1.5, 2, 1.5);
+        const obstacleMat = new THREE.MeshLambertMaterial({ color: 0xff3333 });
+
+        for (let i = 0; i < 30; i++) {
+            const obs = new THREE.Mesh(obstacleGeo, obstacleMat);
+            const lane = Math.floor(Math.random() * 3) - 1; // Faixas: -1, 0, 1
+            obs.position.x = lane * 3.5;
+            obs.position.y = 1;
+            obs.position.z = -(Math.random() * 800 + 30); // Distribui pela rua
+            scene.add(obs);
+            obstacles.push(obs);
+        }
+
+        // 5. A PADARIA (Objetivo)
+        const goalGeo = new THREE.BoxGeometry(10, 8, 5);
+        const goalMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
+        const goal = new THREE.Mesh(goalGeo, goalMat);
+        goal.position.set(0, 4, -900); // Fim do trajeto
+        scene.add(goal);
+
+        // 6. LÓGICA DE MOVIMENTO E FÍSICA
+        let speed = 0.6;
+        let currentLane = 0;
+        let isJumping = false;
+        let velocityY = 0;
+        const gravity = -0.018;
+        let gameOver = false;
+
+        // Captura de Teclas
+        window.addEventListener('keydown', (e) => {
+            if (gameOver) return;
+            if (e.key === 'ArrowLeft' && currentLane > -1) currentLane--;
+            if (e.key === 'ArrowRight' && currentLane < 1) currentLane++;
+            if (e.key === 'ArrowUp' && !isJumping) {
+                isJumping = true;
+                velocityY = 0.35; // Força do pulo
+            }
+        });
+
+        // 7. LOOP PRINCIPAL DO JOGO
+        function animate() {
+            if (gameOver) return;
+            requestAnimationFrame(animate);
+
+            // Correr pra frente automaticamente
+            player.position.z -= speed;
+
+            // Desviar para os lados (interpolação suave)
+            const targetX = currentLane * 3.5;
+            player.position.x += (targetX - player.position.x) * 0.15;
+
+            // Pulo e Gravidade
+            if (isJumping) {
+                player.position.y += velocityY;
+                velocityY += gravity;
+                if (player.position.y <= 1) {
+                    player.position.y = 1;
+                    isJumping = false;
+                    velocityY = 0;
+                }
+            }
+
+            // Câmera Isométrica (Atrás e no alto, olhando para o personagem)
+            camera.position.x = player.position.x * 0.5; // Segue um pouco o eixo X
+            camera.position.y = player.position.y + 8;
+            camera.position.z = player.position.z + 12;
+            camera.lookAt(player.position.x, player.position.y, player.position.z - 5);
+
+            // Verificando Vitória (Chegou na padaria)
+            if (player.position.z <= goal.position.z + 3) {
+                document.getElementById('end-message').innerText = "Missão Cumprida! Pão quentinho garantido.";
+                document.getElementById('end-message').style.color = "#f0b429";
+                document.getElementById('game-over').style.display = "block";
+                gameOver = true;
+            }
+
+            // Verificando Colisão com Obstáculos
+            obstacles.forEach(obs => {
+                const distZ = Math.abs(player.position.z - obs.position.z);
+                const distX = Math.abs(player.position.x - obs.position.x);
+                const distY = Math.abs(player.position.y - obs.position.y);
+
+                if (distZ < 1.2 && distX < 1.5 && distY < 2) {
+                    document.getElementById('end-message').innerText = "Você trombou com alguém! Fim de jogo.";
+                    document.getElementById('end-message').style.color = "#ff3333";
+                    document.getElementById('game-over').style.display = "block";
+                    gameOver = true;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate(); // Inicia o jogo
+
+        // Responsividade caso a janela mude de tamanho
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
