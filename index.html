@@ -3,59 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPRUNNER</title>
+    <title>SPRUNNER v1.4.0</title>
     <style>
+        /* v1.4.0 - Atualização de UI Mobile e Mecânicas de Karma */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #111; color: white; touch-action: none; }
         
-        /* Telas de Menus */
+        /* Telas de Menus Adaptáveis */
         .screen {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             background: rgba(0,0,0,0.85); z-index: 20; text-align: center;
+            box-sizing: border-box; padding: 20px;
         }
         h1 { font-size: 3rem; color: #f0b429; margin-bottom: 10px; letter-spacing: 2px; }
-        h2 { margin-bottom: 30px; font-weight: normal; }
+        h2 { margin-bottom: 20px; font-weight: normal; font-size: 1.5rem; }
+        
         button.menu-btn {
             padding: 15px 30px; font-size: 1.2rem; cursor: pointer; background: #f0b429;
             border: none; border-radius: 8px; font-weight: bold; margin: 10px;
-            text-transform: uppercase; transition: transform 0.1s;
+            text-transform: uppercase; transition: transform 0.1s; width: 100%; max-width: 300px;
         }
-        button.menu-btn:hover { background: #d09b24; transform: scale(1.05); }
-        .char-cards { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; max-width: 900px; }
+        button.menu-btn:active { background: #d09b24; transform: scale(0.95); }
+        
+        /* Ajuste do Flexbox para as Cartas (Mobile First) */
+        .char-cards { 
+            display: flex; gap: 15px; width: 100%; max-width: 900px;
+            overflow-y: auto; padding-bottom: 20px; align-items: center; flex-direction: column;
+        }
         .char-card {
-            background: #222; padding: 20px; border-radius: 10px; border: 2px solid #555;
-            text-align: center; width: 220px;
+            background: #222; padding: 15px; border-radius: 10px; border: 2px solid #555;
+            text-align: center; width: 100%; max-width: 280px; box-sizing: border-box;
         }
+        .char-card h3 { margin-top: 0; }
+        .char-card p { margin: 5px 0; font-size: 14px; }
+        .char-card button { padding: 10px; font-size: 1rem; margin-top: 10px; }
+
+        /* Rodapé de Versão */
+        .version-footer { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 12px; color: #666; pointer-events: none; }
         
         /* HUD - Interface in-game */
-        #hud { position: absolute; top: 10px; left: 10px; right: 10px; pointer-events: none; display: none; z-index: 5; font-size: 14px; }
-        .hud-panel { background: rgba(0,0,0,0.7); padding: 10px; border-radius: 8px; border: 1px solid #444; display: inline-block; margin-right: 10px; vertical-align: top;}
-        .hud-right { float: right; text-align: right; }
-        .bar-container { width: 100px; height: 10px; background: #333; border-radius: 5px; margin: 5px 0; overflow: hidden; }
+        #hud { position: absolute; top: 10px; left: 10px; right: 10px; pointer-events: none; display: none; z-index: 5; font-size: 12px; }
+        .hud-panel { background: rgba(0,0,0,0.7); padding: 8px; border-radius: 8px; border: 1px solid #444; display: inline-block; margin-right: 5px; vertical-align: top;}
+        .hud-right { float: right; text-align: right; margin-right: 0;}
+        .bar-container { width: 80px; height: 10px; background: #333; border-radius: 5px; margin: 3px 0; overflow: hidden; }
         #health-bar { height: 100%; width: 100%; background: #ff3333; transition: width 0.2s; }
         #stamina-bar { height: 100%; width: 100%; background: #33ccff; }
         .text-highlight { color: #f0b429; font-weight: bold; }
         
-        /* Mensagens de Centro de Tela */
+        /* Mensagens */
         #center-message {
             position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 1.5rem; background: rgba(0,0,0,0.9); padding: 20px 40px; border-radius: 10px;
-            color: #fff; display: none; z-index: 15; text-align: center; border: 2px solid #f0b429; white-space: pre-line;
+            font-size: 1.2rem; background: rgba(0,0,0,0.9); padding: 15px 25px; border-radius: 10px;
+            color: #fff; display: none; z-index: 15; text-align: center; border: 2px solid #f0b429; white-space: pre-line; width: 80%; max-width: 400px;
         }
 
         /* Controles Mobile/Na Tela */
         #mobile-controls {
-            position: absolute; bottom: 20px; left: 0; width: 100%;
-            display: none; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 10;
+            position: absolute; bottom: 15px; left: 0; width: 100%;
+            display: none; justify-content: space-between; padding: 0 15px; box-sizing: border-box; z-index: 10;
         }
-        .control-group { display: flex; gap: 10px; }
+        .control-group { display: flex; gap: 8px; }
         .control-btn {
-            background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255,255,255,0.4);
-            border-radius: 50%; width: 60px; height: 60px; color: white;
-            font-size: 24px; font-weight: bold; display: flex; align-items: center;
+            background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%; width: 55px; height: 55px; color: white;
+            font-size: 20px; font-weight: bold; display: flex; align-items: center;
             justify-content: center; user-select: none; touch-action: none; cursor: pointer;
         }
         .control-btn:active { background: rgba(240, 180, 41, 0.5); border-color: #f0b429; }
+
+        /* Media Queries para Desktop (Expandir as cartas) */
+        @media (min-width: 768px) {
+            .char-cards { flex-direction: row; align-items: stretch; }
+            #hud { font-size: 14px; }
+            .bar-container { width: 100px; }
+            .hud-panel { padding: 10px; margin-right: 10px; }
+            #center-message { font-size: 1.5rem; }
+            .control-btn { width: 65px; height: 65px; font-size: 24px; }
+            #mobile-controls { padding: 0 30px; bottom: 30px; }
+        }
     </style>
 </head>
 <body>
@@ -64,42 +89,39 @@
         <h1>SPRUNNER</h1>
         <h2>Você consegue chegar a tempo?</h2>
         <button class="menu-btn" onclick="showCharSelect()">Correr</button>
+        <div class="version-footer">v1.4.0</div>
     </div>
 
     <div id="screen-char" class="screen" style="display: none;">
-        <h2>Escolha sua Dificuldade</h2>
+        <h2 style="margin-bottom: 10px;">Dificuldade</h2>
         <div class="char-cards">
             <div class="char-card">
                 <h3 style="color:#00ff88">Fácil</h3>
-                <p>Crédito: $20</p>
-                <p>Velocidade: Rápido</p>
-                <p>Resposta: Ágil</p>
-                <p>Inventário: Mochila</p>
+                <p>Crédito: $20 | Inv: Mochila</p>
+                <p>Velocidade: Rápido | Resp: Ágil</p>
                 <button class="menu-btn" onclick="startGame('facil')">Escolher</button>
             </div>
             <div class="char-card">
                 <h3 style="color:#0088ff">Médio</h3>
-                <p>Crédito: $10</p>
-                <p>Velocidade: Normal</p>
-                <p>Resposta: Média</p>
-                <p>Inventário: Bolsos</p>
+                <p>Crédito: $10 | Inv: Bolsos</p>
+                <p>Velocidade: Normal | Resp: Média</p>
                 <button class="menu-btn" onclick="startGame('medio')">Escolher</button>
             </div>
             <div class="char-card">
                 <h3 style="color:#ff3333">Difícil</h3>
-                <p>Crédito: $3</p>
-                <p>Velocidade: Lento</p>
-                <p>Resposta: Pesada</p>
-                <p>Inventário: Bolsos</p>
+                <p>Crédito: $3 | Inv: Bolsos</p>
+                <p>Velocidade: Lento | Resp: Pesada</p>
                 <button class="menu-btn" onclick="startGame('dificil')">Escolher</button>
             </div>
         </div>
+        <div class="version-footer">v1.4.0</div>
     </div>
 
     <div id="screen-gameover" class="screen" style="display: none;">
         <h1 id="end-title" style="color: #ff3333;">Game Over</h1>
         <h2 id="end-desc">Você não conseguiu.</h2>
         <button class="menu-btn" onclick="location.reload()">Recomeçar</button>
+        <div class="version-footer">v1.4.0</div>
     </div>
 
     <div id="hud">
@@ -108,13 +130,13 @@
             <div>Fôlego <div class="bar-container"><div id="stamina-bar"></div></div></div>
         </div>
         <div class="hud-panel">
-            <div>Carteira: $<span id="ui-money"></span></div>
-            <div>Status: <span id="ui-rep" class="text-highlight">Educado</span></div>
-            <div>Itens: <span id="ui-inv"></span></div>
+            <div>C: $<span id="ui-money"></span></div>
+            <div>S: <span id="ui-rep" class="text-highlight">Educado</span></div>
+            <div>I: <span id="ui-inv"></span></div>
         </div>
         <div class="hud-panel hud-right">
-            <div style="font-size: 1.2rem;">⏱️ <span id="ui-time">02:00</span></div>
-            <div style="margin-top: 5px;">Destino: <span id="ui-goal" class="text-highlight">Padaria</span></div>
+            <div style="font-size: 1.1rem;">⏱️ <span id="ui-time">02:00</span></div>
+            <div style="margin-top: 5px;">Ir: <span id="ui-goal" class="text-highlight">Padaria</span></div>
         </div>
     </div>
 
@@ -126,14 +148,18 @@
             <div class="control-btn" id="btn-right">➡️</div>
         </div>
         <div class="control-group">
-            <div class="control-btn" id="btn-jump" style="font-size: 14px;">PULO</div>
-            <div class="control-btn" id="btn-sprint" style="font-size: 14px;">CORRER</div>
+            <div class="control-btn" id="btn-jump" style="font-size: 12px;">PULO</div>
+            <div class="control-btn" id="btn-sprint" style="font-size: 12px;">CORRER</div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <script>
+        // --- GERENCIAMENTO DE SESSÕES (EVENTO DO LADRÃO) ---
+        let metaData = JSON.parse(localStorage.getItem('sprunner_meta')) || { sessionCount: 0, nextThiefSession: 2 };
+        let spawnThiefThisMatch = false;
+
         function showCharSelect() {
             document.getElementById('screen-start').style.display = 'none';
             document.getElementById('screen-char').style.display = 'flex';
@@ -201,8 +227,9 @@
         scene.add(goalMesh);
 
         const obstacles = [];
-        const npcMat = new THREE.MeshLambertMaterial({ color: 0xff8800 }); 
-        const solidMat = new THREE.MeshLambertMaterial({ color: 0x555555 }); 
+        const npcMat = new THREE.MeshLambertMaterial({ color: 0xff8800 }); // Laranja
+        const solidMat = new THREE.MeshLambertMaterial({ color: 0x555555 }); // Cinza
+        const policeMat = new THREE.MeshLambertMaterial({ color: 0x0044ff }); // Azul (Polícia)
 
         function generateObstacles() {
             obstacles.forEach(obs => scene.remove(obs));
@@ -212,12 +239,20 @@
                 const isSolid = Math.random() > 0.6;
                 const obs = new THREE.Mesh(new THREE.BoxGeometry(1.5, isSolid ? 3 : 2, 1.5), isSolid ? solidMat : npcMat);
                 
-                const isThief = !isSolid && Math.random() < 0.15; 
-                
-                obs.userData = { type: isSolid ? 'solid' : 'npc', isThief: isThief, hit: false };
+                obs.userData = { type: isSolid ? 'solid' : 'npc', isThief: false, isPolice: false, hit: false };
                 obs.position.set((Math.floor(Math.random() * 3) - 1) * 3.5, isSolid ? 1.5 : 1, -(Math.random() * 850 + 30));
                 scene.add(obs);
                 obstacles.push(obs);
+            }
+
+            // Injeta UM ladrão se for a sessão sorteada e ainda não tiver spawnado
+            if (spawnThiefThisMatch) {
+                let npcs = obstacles.filter(o => o.userData.type === 'npc');
+                if (npcs.length > 0) {
+                    let randomNpc = npcs[Math.floor(Math.random() * npcs.length)];
+                    randomNpc.userData.isThief = true;
+                    spawnThiefThisMatch = false; // Garante que é só UM ladrão na partida inteira (ida ou volta)
+                }
             }
         }
 
@@ -229,6 +264,15 @@
             document.getElementById('screen-char').style.display = 'none';
             document.getElementById('hud').style.display = 'block';
             document.getElementById('mobile-controls').style.display = 'flex';
+
+            // Atualiza sessão para o Ladrão
+            metaData.sessionCount++;
+            if (metaData.sessionCount >= metaData.nextThiefSession) {
+                spawnThiefThisMatch = true;
+                // Sorteia a próxima sessão com ladrão (daqui a 2 a 5 partidas)
+                metaData.nextThiefSession = metaData.sessionCount + Math.floor(Math.random() * 4) + 2; 
+            }
+            localStorage.setItem('sprunner_meta', JSON.stringify(metaData));
 
             if (difficulty === 'facil') {
                 playerStats = { money: 20, health: 100, stamina: 100, baseSpeed: 0.75, reaction: 0.2, bagPenalty: 1, bumps: 0, hasBackpack: true, inventory: "Mochila Vazia" };
@@ -267,7 +311,7 @@
             
             let repText = "Educado"; let repColor = "#00ff00";
             if (playerStats.bumps > 2) { repText = "Desastrado"; repColor = "#ffff00"; }
-            if (playerStats.bumps > 5) { repText = "Vilão"; repColor = "#ff3333"; }
+            if (playerStats.bumps >= 5) { repText = "Vilão"; repColor = "#ff3333"; }
             
             const repEl = document.getElementById('ui-rep');
             repEl.innerText = repText; repEl.style.color = repColor;
@@ -328,7 +372,6 @@
                 return; 
             }
 
-            // CORREÇÃO DOS TRILHOS AQUI: Move uma faixa por vez
             if (keys.Left && currentLane > -1) { currentLane--; keys.Left = false; }
             if (keys.Right && currentLane < 1) { currentLane++; keys.Right = false; }
             
@@ -348,6 +391,19 @@
 
             playerMesh.position.z -= currentSpeed;
 
+            // SISTEMA DE VILÃO E POLÍCIA: Spawna polícia se for Vilão
+            if (playerStats.bumps >= 5) {
+                obstacles.forEach(obs => {
+                    // Transforma alguns NPCs distantes em Polícia
+                    if (obs.userData.type === 'npc' && !obs.userData.isThief && !obs.userData.isPolice && obs.position.z < playerMesh.position.z - 80) {
+                        if (Math.random() < 0.03) { // 3% de chance por frame de virar polícia
+                            obs.userData.isPolice = true;
+                            obs.material = policeMat; 
+                        }
+                    }
+                });
+            }
+
             camera.position.x = playerMesh.position.x * 0.5;
             camera.position.y = playerMesh.position.y + 8;
             camera.position.z = playerMesh.position.z + 12;
@@ -357,7 +413,6 @@
                 if (phase === 'ida') {
                     handleBakery();
                 } else {
-                    // VERIFICAÇÃO FINAL: Com pão é Vitória, sem pão é Sobrevivência
                     if (playerStats.inventory.includes("Pães") || playerStats.inventory.includes("Sacola")) {
                         endGame("VITÓRIA!", "Sucesso! Você garantiu o café da manhã!");
                     } else {
@@ -366,12 +421,16 @@
                 }
             }
 
+            // Lógica de Colisão
             obstacles.forEach(obs => {
                 if (obs.userData.hit) return;
                 if (Math.abs(playerMesh.position.z - obs.position.z) < 1.5 && Math.abs(playerMesh.position.x - obs.position.x) < 1.5 && Math.abs(playerMesh.position.y - obs.position.y) < 2) {
                     obs.userData.hit = true;
                     
-                    if (obs.userData.isThief) {
+                    if (obs.userData.isPolice) {
+                        endGame("PRESO!", "A polícia te pegou pelos seus atos de vandalismo!");
+                    }
+                    else if (obs.userData.isThief) {
                         isStunned = true;
                         playerStats.money = 0;
                         playerStats.inventory = playerStats.hasBackpack ? "Mochila (Vazia)" : "Bolsos (Vazios)";
@@ -381,9 +440,19 @@
                         setTimeout(() => { isStunned = false; }, 5000);
                     }
                     else if (obs.userData.type === 'npc') {
-                        playerStats.bumps++;
-                        showMessage("Desculpe!", 500);
-                        playerMesh.position.z += 1;
+                        if (playerStats.bumps >= 5) {
+                            // Mecânica do Vilão: Rouba dinheiro no esbarrão
+                            playerStats.money += 2;
+                            showMessage("Você assaltou $2!", 1000);
+                            playerMesh.position.z += 0.5; // Tranco menor
+                        } else {
+                            playerStats.bumps++;
+                            showMessage("Desculpe!", 500);
+                            playerMesh.position.z += 1;
+                            if (playerStats.bumps === 5) {
+                                showMessage("Você virou um VILÃO!\nA polícia está na cola!", 3000);
+                            }
+                        }
                     } else if (obs.userData.type === 'solid') {
                         playerStats.health -= 25;
                         showMessage("AI! Bateu no poste!", 1000);
