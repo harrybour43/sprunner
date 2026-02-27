@@ -3,198 +3,394 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Runner SP: Missão Padaria</title>
+    <title>SPRUNNER</title>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #000;
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #111; color: white; }
+        
+        /* Telas de Menus */
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.85); z-index: 10;
         }
-        #ui { 
-            position: absolute; 
-            top: 20px; 
-            left: 20px; 
-            color: white; 
-            background: rgba(0,0,0,0.8); 
-            padding: 15px 25px; 
-            border-radius: 8px; 
-            border: 1px solid #333;
+        h1 { font-size: 3rem; color: #f0b429; margin-bottom: 10px; letter-spacing: 2px; }
+        h2 { margin-bottom: 30px; font-weight: normal; }
+        button {
+            padding: 15px 30px; font-size: 1.2rem; cursor: pointer; background: #f0b429;
+            border: none; border-radius: 8px; font-weight: bold; margin: 10px;
+            text-transform: uppercase; transition: transform 0.1s;
         }
-        h3 { margin-top: 0; color: #f0b429; }
-        p { margin: 5px 0; font-size: 14px; }
-        #game-over { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            color: white; 
-            background: rgba(0,0,0,0.95); 
-            padding: 30px; 
-            border-radius: 10px; 
-            display: none; 
-            text-align: center; 
-            border: 2px solid #555;
+        button:hover { background: #d09b24; transform: scale(1.05); }
+        .char-cards { display: flex; gap: 20px; }
+        .char-card {
+            background: #222; padding: 20px; border-radius: 10px; border: 2px solid #555;
+            text-align: center; max-width: 250px;
         }
-        button { 
-            margin-top: 15px; 
-            padding: 10px 20px; 
-            cursor: pointer; 
-            background: #f0b429; 
-            border: none; 
-            border-radius: 5px; 
-            font-weight: bold;
+        
+        /* HUD - Interface in-game */
+        #hud { position: absolute; top: 10px; left: 10px; right: 10px; pointer-events: none; display: none; z-index: 5; }
+        .hud-panel { background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; border: 1px solid #444; display: inline-block; margin-right: 10px; vertical-align: top;}
+        .hud-right { float: right; text-align: right; }
+        .bar-container { width: 150px; height: 15px; background: #333; border-radius: 5px; margin: 5px 0; overflow: hidden; }
+        #health-bar { height: 100%; width: 100%; background: #ff3333; transition: width 0.2s; }
+        #stamina-bar { height: 100%; width: 100%; background: #33ccff; }
+        .text-highlight { color: #f0b429; font-weight: bold; }
+        
+        /* Mensagens de Centro de Tela */
+        #center-message {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 2rem; background: rgba(0,0,0,0.9); padding: 20px 40px; border-radius: 10px;
+            color: #fff; display: none; z-index: 8; text-align: center; border: 2px solid #f0b429;
         }
-        button:hover { background: #d09b24; }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <h3>📍 Rumo à Padaria (Santa Cecília)</h3>
-        <p><b>Objetivo:</b> 10 pães e 2L de leite.</p>
-        <p><b>Controles:</b> ⬅️ ➡️ (Desviar) | ⬆️ (Pular)</p>
-        <p><b>Inventário:</b> Cartão de Transporte, Mochila Vazia</p>
+    <div id="screen-start" class="screen">
+        <h1>SPRUNNER</h1>
+        <h2>Você consegue chegar a tempo?</h2>
+        <button onclick="showCharSelect()">Correr</button>
     </div>
 
-    <div id="game-over">
-        <h2 id="end-message">Fim de Jogo</h2>
-        <button onclick="location.reload()">Tentar Novamente</button>
+    <div id="screen-char" class="screen" style="display: none;">
+        <h2>Escolha seu Personagem</h2>
+        <div class="char-cards">
+            <div class="char-card">
+                <h3 style="color:#0088ff">Personagem A</h3>
+                <p>Dinheiro: $10 (Exato)</p>
+                <p>Velocidade: Normal</p>
+                <p>Inventário: Mochila</p>
+                <button onclick="startGame('A')">Escolher A</button>
+            </div>
+            <div class="char-card">
+                <h3 style="color:#aa33ff">Personagem B</h3>
+                <p>Dinheiro: $12 (Sobrando)</p>
+                <p>Velocidade: Mais lento</p>
+                <p>Inventário: Bolsos (Usa Sacola)</p>
+                <button onclick="startGame('B')">Escolher B</button>
+            </div>
+        </div>
     </div>
+
+    <div id="screen-gameover" class="screen" style="display: none;">
+        <h1 id="end-title" style="color: #ff3333;">Game Over</h1>
+        <h2 id="end-desc">Você não conseguiu.</h2>
+        <button onclick="location.reload()">Recomeçar</button>
+    </div>
+
+    <div id="hud">
+        <div class="hud-panel">
+            <div>Saúde</div>
+            <div class="bar-container"><div id="health-bar"></div></div>
+            <div>Fôlego</div>
+            <div class="bar-container"><div id="stamina-bar"></div></div>
+        </div>
+        <div class="hud-panel">
+            <div>Carteira: $<span id="ui-money"></span></div>
+            <div>Reputação: <span id="ui-rep" class="text-highlight">Educado</span></div>
+            <div>Itens: <span id="ui-inv">Nada</span></div>
+        </div>
+        <div class="hud-panel hud-right">
+            <div style="font-size: 1.5rem;">⏱️ <span id="ui-time">02:00</span></div>
+            <div style="margin-top: 5px;">Destino: <span id="ui-goal" class="text-highlight">Padaria</span></div>
+        </div>
+    </div>
+
+    <div id="center-message"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <script>
-        // 1. CONFIGURAÇÃO BÁSICA
+        // Lógica de Telas
+        function showCharSelect() {
+            document.getElementById('screen-start').style.display = 'none';
+            document.getElementById('screen-char').style.display = 'flex';
+        }
+
+        // --- SISTEMA DE JOGO ---
+        let gameActive = false;
+        let phase = 'ida'; // 'ida' (padaria) ou 'volta' (casa)
+        let timer = 120; // 2 minutos
+        let timerInterval;
+
+        // Atributos do Jogador
+        let playerStats = {
+            type: 'A', money: 0, health: 100, stamina: 100, 
+            baseSpeed: 0, reaction: 0, bagPenalty: 1, bumps: 0, hasBackpack: false, inventory: "Vazio"
+        };
+
+        // Inputs
+        const keys = { Left: false, Right: false, Up: false, Space: false };
+        window.addEventListener('keydown', (e) => updateKeys(e.code, true));
+        window.addEventListener('keyup', (e) => updateKeys(e.code, false));
+
+        function updateKeys(code, isPressed) {
+            if(code === 'ArrowLeft') keys.Left = isPressed;
+            if(code === 'ArrowRight') keys.Right = isPressed;
+            if(code === 'ArrowUp') keys.Up = isPressed;
+            if(code === 'Space') keys.Space = isPressed;
+        }
+
+        // --- INICIALIZAÇÃO DO THREE.JS ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // Cor do céu
-        scene.fog = new THREE.Fog(0x87CEEB, 50, 150); // Efeito de neblina urbana
+        scene.background = new THREE.Color(0x222233); // Fim de tarde SP
+        scene.fog = new THREE.Fog(0x222233, 50, 150);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Iluminação
-        const light = new THREE.DirectionalLight(0xffffff, 1);
+        const light = new THREE.DirectionalLight(0xffffff, 0.8);
         light.position.set(10, 20, 10);
         scene.add(light);
-        scene.add(new THREE.AmbientLight(0x606060));
+        scene.add(new THREE.AmbientLight(0x555555));
 
-        // 2. CRIANDO O CENÁRIO
-        // O Asfalto
-        const groundGeometry = new THREE.PlaneGeometry(30, 2000);
-        const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        // Pista
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(30, 2000), 
+            new THREE.MeshLambertMaterial({ color: 0x2a2a2a })
+        );
         ground.rotation.x = -Math.PI / 2;
         ground.position.z = -500;
         scene.add(ground);
 
-        // 3. CRIANDO O PERSONAGEM (Você)
-        const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
-        const playerMaterial = new THREE.MeshLambertMaterial({ color: 0x0088ff });
-        const player = new THREE.Mesh(playerGeometry, playerMaterial);
-        player.position.y = 1;
-        scene.add(player);
+        // Jogador (Mesh)
+        const playerGeo = new THREE.BoxGeometry(1, 2, 1);
+        const playerMat = new THREE.MeshLambertMaterial({ color: 0x0088ff });
+        const playerMesh = new THREE.Mesh(playerGeo, playerMat);
+        scene.add(playerMesh);
 
-        // 4. CRIANDO OS OBSTÁCULOS
+        // Objetivo Físico (Padaria / Casa)
+        const goalMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
+        const goalMesh = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 5), goalMat);
+        goalMesh.position.set(0, 4, -900);
+        scene.add(goalMesh);
+
+        // Gerador de Obstáculos
         const obstacles = [];
-        const obstacleGeo = new THREE.BoxGeometry(1.5, 2, 1.5);
-        const obstacleMat = new THREE.MeshLambertMaterial({ color: 0xff3333 });
+        const npcMat = new THREE.MeshLambertMaterial({ color: 0xff8800 }); // Pessoas
+        const solidMat = new THREE.MeshLambertMaterial({ color: 0x555555 }); // Postes/Carros
 
-        for (let i = 0; i < 30; i++) {
-            const obs = new THREE.Mesh(obstacleGeo, obstacleMat);
-            const lane = Math.floor(Math.random() * 3) - 1; // Faixas: -1, 0, 1
-            obs.position.x = lane * 3.5;
-            obs.position.y = 1;
-            obs.position.z = -(Math.random() * 800 + 30); // Distribui pela rua
-            scene.add(obs);
-            obstacles.push(obs);
+        function generateObstacles() {
+            obstacles.forEach(obs => scene.remove(obs));
+            obstacles.length = 0;
+            
+            for (let i = 0; i < 40; i++) {
+                const isSolid = Math.random() > 0.6; // 40% chance de ser poste/carro, 60% pessoa
+                const obs = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.5, isSolid ? 3 : 2, 1.5), 
+                    isSolid ? solidMat : npcMat
+                );
+                
+                obs.userData = { type: isSolid ? 'solid' : 'npc', hit: false };
+                obs.position.set(
+                    (Math.floor(Math.random() * 3) - 1) * 3.5, 
+                    isSolid ? 1.5 : 1, 
+                    -(Math.random() * 850 + 30)
+                );
+                scene.add(obs);
+                obstacles.push(obs);
+            }
         }
 
-        // 5. A PADARIA (Objetivo)
-        const goalGeo = new THREE.BoxGeometry(10, 8, 5);
-        const goalMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
-        const goal = new THREE.Mesh(goalGeo, goalMat);
-        goal.position.set(0, 4, -900); // Fim do trajeto
-        scene.add(goal);
-
-        // 6. LÓGICA DE MOVIMENTO E FÍSICA
-        let speed = 0.6;
+        // Variáveis Físicas
         let currentLane = 0;
         let isJumping = false;
         let velocityY = 0;
-        const gravity = -0.018;
-        let gameOver = false;
 
-        // Captura de Teclas
-        window.addEventListener('keydown', (e) => {
-            if (gameOver) return;
-            if (e.key === 'ArrowLeft' && currentLane > -1) currentLane--;
-            if (e.key === 'ArrowRight' && currentLane < 1) currentLane++;
-            if (e.key === 'ArrowUp' && !isJumping) {
-                isJumping = true;
-                velocityY = 0.35; // Força do pulo
+        // --- LÓGICA DE INÍCIO E SALVAMENTO ---
+        function startGame(charType) {
+            document.getElementById('screen-char').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+
+            // Verifica LocalStorage ou cria novo
+            let saved = JSON.parse(localStorage.getItem('sprunner_save'));
+            
+            if (charType === 'A') {
+                playerStats = { type: 'A', money: 10, health: 100, stamina: 100, baseSpeed: 0.7, reaction: 0.15, bagPenalty: 1, bumps: 0, hasBackpack: true, inventory: "Mochila (Vazia)" };
+                playerMat.color.setHex(0x0088ff);
+            } else {
+                playerStats = { type: 'B', money: 12, health: 100, stamina: 100, baseSpeed: 0.55, reaction: 0.05, bagPenalty: 1, bumps: 0, hasBackpack: false, inventory: "Bolsos" };
+                playerMat.color.setHex(0xaa33ff);
             }
-        });
 
-        // 7. LOOP PRINCIPAL DO JOGO
+            playerMesh.position.set(0, 1, 0);
+            currentLane = 0;
+            phase = 'ida';
+            timer = 120;
+            generateObstacles();
+            goalMesh.material.color.setHex(0xffcc00); // Amarelo padaria
+
+            updateUI();
+            gameActive = true;
+            timerInterval = setInterval(updateTimer, 1000);
+            animate();
+        }
+
+        // --- SISTEMAS DE JOGO (HUD, TEMPO, INTERAÇÕES) ---
+        function updateTimer() {
+            if (!gameActive) return;
+            timer--;
+            const m = Math.floor(timer / 60).toString().padStart(2, '0');
+            const s = (timer % 60).toString().padStart(2, '0');
+            document.getElementById('ui-time').innerText = `${m}:${s}`;
+            
+            if (timer <= 0) endGame("O tempo acabou!", "A padaria fechou ou o leite estragou.");
+        }
+
+        function updateUI() {
+            document.getElementById('health-bar').style.width = playerStats.health + '%';
+            document.getElementById('stamina-bar').style.width = Math.max(0, playerStats.stamina) + '%';
+            document.getElementById('ui-money').innerText = playerStats.money;
+            document.getElementById('ui-inv').innerText = playerStats.inventory;
+            
+            // Lógica de Reputação
+            let repText = "Educado";
+            let repColor = "#00ff00";
+            if (playerStats.bumps > 2) { repText = "Desastrado"; repColor = "#ffff00"; }
+            if (playerStats.bumps > 6) { repText = "Vilão"; repColor = "#ff3333"; }
+            
+            const repEl = document.getElementById('ui-rep');
+            repEl.innerText = repText;
+            repEl.style.color = repColor;
+        }
+
+        function showMessage(msg, time = 2000) {
+            const el = document.getElementById('center-message');
+            el.innerText = msg;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, time);
+        }
+
+        function handleBakery() {
+            gameActive = false;
+            playerStats.money -= 10;
+            
+            if (playerStats.hasBackpack) {
+                playerStats.inventory = "Mochila (Pães e Leite)";
+                showMessage("Itens guardados na mochila!\nVoltando pra casa...");
+            } else {
+                playerStats.inventory = "Bolsos + Sacola na mão";
+                playerStats.bagPenalty = 0.95; // Reduz velocidade em 5%
+                showMessage("Sem mochila! Carregando sacola (-5% vel).\nVoltando pra casa...");
+            }
+            
+            updateUI();
+
+            // Configura a fase de Volta
+            setTimeout(() => {
+                phase = 'volta';
+                playerMesh.position.z = 0; // Reseta posição para o começo da rua (sentido inverso)
+                document.getElementById('ui-goal').innerText = "Casa";
+                goalMesh.material.color.setHex(0x33ccff); // Azul Casa
+                generateObstacles(); // Novos obstaculos pra volta
+                gameActive = true;
+            }, 3000);
+        }
+
+        function endGame(title, desc) {
+            gameActive = false;
+            clearInterval(timerInterval);
+            localStorage.removeItem('sprunner_save'); // Reseta progresso
+            
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('end-title').innerText = title;
+            document.getElementById('end-desc').innerText = desc;
+            
+            if(title === "VITÓRIA!") document.getElementById('end-title').style.color = "#00ff00";
+            
+            document.getElementById('screen-gameover').style.display = 'flex';
+        }
+
+        // --- LOOP PRINCIPAL (FÍSICA E MOVIMENTO) ---
         function animate() {
-            if (gameOver) return;
+            if (!gameActive) {
+                if(timer > 0) requestAnimationFrame(animate);
+                return;
+            }
             requestAnimationFrame(animate);
 
-            // Correr pra frente automaticamente
-            player.position.z -= speed;
-
-            // Desviar para os lados (interpolação suave)
+            // Troca de Faixas (com delay de reação baseado no personagem)
+            if (keys.Left && currentLane > -1) { currentLane = -1; keys.Left = false; }
+            if (keys.Right && currentLane < 1) { currentLane = 1; keys.Right = false; }
+            
             const targetX = currentLane * 3.5;
-            player.position.x += (targetX - player.position.x) * 0.15;
+            playerMesh.position.x += (targetX - playerMesh.position.x) * playerStats.reaction;
 
-            // Pulo e Gravidade
+            // Pulo
+            if (keys.Space && !isJumping) {
+                isJumping = true;
+                velocityY = 0.4;
+                keys.Space = false;
+            }
             if (isJumping) {
-                player.position.y += velocityY;
-                velocityY += gravity;
-                if (player.position.y <= 1) {
-                    player.position.y = 1;
+                playerMesh.position.y += velocityY;
+                velocityY -= 0.02; // gravidade
+                if (playerMesh.position.y <= 1) {
+                    playerMesh.position.y = 1;
                     isJumping = false;
-                    velocityY = 0;
                 }
             }
 
-            // Câmera Isométrica (Atrás e no alto, olhando para o personagem)
-            camera.position.x = player.position.x * 0.5; // Segue um pouco o eixo X
-            camera.position.y = player.position.y + 8;
-            camera.position.z = player.position.z + 12;
-            camera.lookAt(player.position.x, player.position.y, player.position.z - 5);
+            // Fôlego e Velocidade
+            let currentSpeed = playerStats.baseSpeed * playerStats.bagPenalty;
+            
+            if (keys.Up && playerStats.stamina > 0) {
+                currentSpeed *= 1.5; // Sprint
+                playerStats.stamina -= 0.8;
+            } else {
+                if (playerStats.stamina < 100) playerStats.stamina += 0.3; // Recupera
+            }
+            
+            if (playerStats.stamina <= 0) currentSpeed = 0; // Cansaço extremo para o personagem
 
-            // Verificando Vitória (Chegou na padaria)
-            if (player.position.z <= goal.position.z + 3) {
-                document.getElementById('end-message').innerText = "Missão Cumprida! Pão quentinho garantido.";
-                document.getElementById('end-message').style.color = "#f0b429";
-                document.getElementById('game-over').style.display = "block";
-                gameOver = true;
+            // Mover pra frente
+            playerMesh.position.z -= currentSpeed;
+
+            // Câmera
+            camera.position.x = playerMesh.position.x * 0.5;
+            camera.position.y = playerMesh.position.y + 8;
+            camera.position.z = playerMesh.position.z + 12;
+            camera.lookAt(playerMesh.position.x, playerMesh.position.y, playerMesh.position.z - 5);
+
+            // Verificação de Chegada
+            if (playerMesh.position.z <= goalMesh.position.z + 3) {
+                if (phase === 'ida') handleBakery();
+                else endGame("VITÓRIA!", "Você garantiu o café da manhã a tempo!");
             }
 
-            // Verificando Colisão com Obstáculos
+            // Colisões
             obstacles.forEach(obs => {
-                const distZ = Math.abs(player.position.z - obs.position.z);
-                const distX = Math.abs(player.position.x - obs.position.x);
-                const distY = Math.abs(player.position.y - obs.position.y);
+                if (obs.userData.hit) return; // Já bateu
 
-                if (distZ < 1.2 && distX < 1.5 && distY < 2) {
-                    document.getElementById('end-message').innerText = "Você trombou com alguém! Fim de jogo.";
-                    document.getElementById('end-message').style.color = "#ff3333";
-                    document.getElementById('game-over').style.display = "block";
-                    gameOver = true;
+                const distZ = Math.abs(playerMesh.position.z - obs.position.z);
+                const distX = Math.abs(playerMesh.position.x - obs.position.x);
+                const distY = Math.abs(playerMesh.position.y - obs.position.y);
+
+                if (distZ < 1.5 && distX < 1.5 && distY < 2) {
+                    obs.userData.hit = true; // Marca como atingido
+                    
+                    if (obs.userData.type === 'npc') {
+                        playerStats.bumps++;
+                        showMessage("Desculpe!", 500);
+                        playerMesh.position.z += 1; // Leve tranco pra trás
+                    } else if (obs.userData.type === 'solid') {
+                        playerStats.health -= 25;
+                        showMessage("AI! Bateu em algo sólido!", 1000);
+                        playerMesh.position.z += 3; // Tranco forte
+                        
+                        if (playerStats.health <= 0) {
+                            endGame("Você se machucou", "O choque foi muito forte. O pão vai ter que esperar.");
+                        }
+                    }
                 }
             });
 
+            updateUI();
             renderer.render(scene, camera);
         }
 
-        animate(); // Inicia o jogo
-
-        // Responsividade caso a janela mude de tamanho
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
