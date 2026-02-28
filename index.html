@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPRUNNER v1.4.0</title>
+    <title>SPRUNNER v1.5.0</title>
     <style>
-        /* v1.4.0 - Atualização de UI Mobile e Mecânicas de Karma */
+        /* v1.5.0 - Bonecos Palito e Animações */
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #111; color: white; touch-action: none; }
         
-        /* Telas de Menus Adaptáveis */
         .screen {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -25,7 +24,6 @@
         }
         button.menu-btn:active { background: #d09b24; transform: scale(0.95); }
         
-        /* Ajuste do Flexbox para as Cartas (Mobile First) */
         .char-cards { 
             display: flex; gap: 15px; width: 100%; max-width: 900px;
             overflow-y: auto; padding-bottom: 20px; align-items: center; flex-direction: column;
@@ -38,10 +36,8 @@
         .char-card p { margin: 5px 0; font-size: 14px; }
         .char-card button { padding: 10px; font-size: 1rem; margin-top: 10px; }
 
-        /* Rodapé de Versão */
         .version-footer { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 12px; color: #666; pointer-events: none; }
         
-        /* HUD - Interface in-game */
         #hud { position: absolute; top: 10px; left: 10px; right: 10px; pointer-events: none; display: none; z-index: 5; font-size: 12px; }
         .hud-panel { background: rgba(0,0,0,0.7); padding: 8px; border-radius: 8px; border: 1px solid #444; display: inline-block; margin-right: 5px; vertical-align: top;}
         .hud-right { float: right; text-align: right; margin-right: 0;}
@@ -50,14 +46,12 @@
         #stamina-bar { height: 100%; width: 100%; background: #33ccff; }
         .text-highlight { color: #f0b429; font-weight: bold; }
         
-        /* Mensagens */
         #center-message {
             position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
             font-size: 1.2rem; background: rgba(0,0,0,0.9); padding: 15px 25px; border-radius: 10px;
             color: #fff; display: none; z-index: 15; text-align: center; border: 2px solid #f0b429; white-space: pre-line; width: 80%; max-width: 400px;
         }
 
-        /* Controles Mobile/Na Tela */
         #mobile-controls {
             position: absolute; bottom: 15px; left: 0; width: 100%;
             display: none; justify-content: space-between; padding: 0 15px; box-sizing: border-box; z-index: 10;
@@ -71,7 +65,6 @@
         }
         .control-btn:active { background: rgba(240, 180, 41, 0.5); border-color: #f0b429; }
 
-        /* Media Queries para Desktop (Expandir as cartas) */
         @media (min-width: 768px) {
             .char-cards { flex-direction: row; align-items: stretch; }
             #hud { font-size: 14px; }
@@ -89,7 +82,7 @@
         <h1>SPRUNNER</h1>
         <h2>Você consegue chegar a tempo?</h2>
         <button class="menu-btn" onclick="showCharSelect()">Correr</button>
-        <div class="version-footer">v1.4.0</div>
+        <div class="version-footer">v1.5.0</div>
     </div>
 
     <div id="screen-char" class="screen" style="display: none;">
@@ -114,14 +107,14 @@
                 <button class="menu-btn" onclick="startGame('dificil')">Escolher</button>
             </div>
         </div>
-        <div class="version-footer">v1.4.0</div>
+        <div class="version-footer">v1.5.0</div>
     </div>
 
     <div id="screen-gameover" class="screen" style="display: none;">
         <h1 id="end-title" style="color: #ff3333;">Game Over</h1>
         <h2 id="end-desc">Você não conseguiu.</h2>
         <button class="menu-btn" onclick="location.reload()">Recomeçar</button>
-        <div class="version-footer">v1.4.0</div>
+        <div class="version-footer">v1.5.0</div>
     </div>
 
     <div id="hud">
@@ -156,7 +149,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <script>
-        // --- GERENCIAMENTO DE SESSÕES (EVENTO DO LADRÃO) ---
         let metaData = JSON.parse(localStorage.getItem('sprunner_meta')) || { sessionCount: 0, nextThiefSession: 2 };
         let spawnThiefThisMatch = false;
 
@@ -189,17 +181,14 @@
             const btn = document.getElementById(id);
             const press = (e) => { e.preventDefault(); updateKeys(code, true); };
             const release = (e) => { e.preventDefault(); updateKeys(code, false); };
-            btn.addEventListener('touchstart', press);
-            btn.addEventListener('mousedown', press);
-            btn.addEventListener('touchend', release);
-            btn.addEventListener('mouseup', release);
+            btn.addEventListener('touchstart', press); btn.addEventListener('mousedown', press);
+            btn.addEventListener('touchend', release); btn.addEventListener('mouseup', release);
             btn.addEventListener('mouseleave', release);
         }
-        bindTouch('btn-left', 'ArrowLeft');
-        bindTouch('btn-right', 'ArrowRight');
-        bindTouch('btn-jump', 'Space');
-        bindTouch('btn-sprint', 'ArrowUp');
+        bindTouch('btn-left', 'ArrowLeft'); bindTouch('btn-right', 'ArrowRight');
+        bindTouch('btn-jump', 'Space'); bindTouch('btn-sprint', 'ArrowUp');
 
+        // --- INÍCIO DO THREE.JS ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x222233);
         scene.fog = new THREE.Fog(0x222233, 50, 150);
@@ -218,8 +207,51 @@
         ground.rotation.x = -Math.PI / 2; ground.position.z = -500;
         scene.add(ground);
 
-        const playerMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-        const playerMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), playerMat);
+        // --- FUNÇÃO CRIADORA DE BONECOS PALITO ---
+        function createStickFigure(colorHex) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshLambertMaterial({ color: colorHex });
+
+            // Cabeça
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), mat);
+            head.position.y = 1.6;
+            group.add(head);
+
+            // Tronco
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.7), mat);
+            torso.position.y = 1.1;
+            group.add(torso);
+
+            // Membros articulados no topo
+            const limbGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.6);
+            limbGeo.translate(0, -0.3, 0); 
+
+            const leftArm = new THREE.Mesh(limbGeo, mat);
+            leftArm.position.set(0.2, 1.4, 0);
+            group.add(leftArm);
+
+            const rightArm = new THREE.Mesh(limbGeo, mat);
+            rightArm.position.set(-0.2, 1.4, 0);
+            group.add(rightArm);
+
+            const leftLeg = new THREE.Mesh(limbGeo, mat);
+            leftLeg.position.set(0.1, 0.7, 0);
+            group.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(limbGeo, mat);
+            rightLeg.position.set(-0.1, 0.7, 0);
+            group.add(rightLeg);
+
+            group.userData = { leftArm, rightArm, leftLeg, rightLeg };
+            return group;
+        }
+
+        function setStickFigureColor(group, colorHex) {
+            group.children.forEach(child => { child.material.color.setHex(colorHex); });
+        }
+
+        // Criando o Jogador como Boneco
+        const playerMesh = createStickFigure(0xffffff);
         scene.add(playerMesh);
 
         const goalMesh = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 5), new THREE.MeshLambertMaterial({ color: 0xffcc00 }));
@@ -227,9 +259,7 @@
         scene.add(goalMesh);
 
         const obstacles = [];
-        const npcMat = new THREE.MeshLambertMaterial({ color: 0xff8800 }); // Laranja
-        const solidMat = new THREE.MeshLambertMaterial({ color: 0x555555 }); // Cinza
-        const policeMat = new THREE.MeshLambertMaterial({ color: 0x0044ff }); // Azul (Polícia)
+        const solidMat = new THREE.MeshLambertMaterial({ color: 0x555555 }); // Postes/Lixeiras continuam blocos
 
         function generateObstacles() {
             obstacles.forEach(obs => scene.remove(obs));
@@ -237,21 +267,29 @@
             
             for (let i = 0; i < 45; i++) {
                 const isSolid = Math.random() > 0.6;
-                const obs = new THREE.Mesh(new THREE.BoxGeometry(1.5, isSolid ? 3 : 2, 1.5), isSolid ? solidMat : npcMat);
+                let obs;
+
+                if (isSolid) {
+                    obs = new THREE.Mesh(new THREE.BoxGeometry(1.2, 3, 1.2), solidMat);
+                    obs.position.y = 1.5;
+                } else {
+                    obs = createStickFigure(0xff8800); // NPC Laranja
+                    obs.position.y = 0;
+                }
                 
-                obs.userData = { type: isSolid ? 'solid' : 'npc', isThief: false, isPolice: false, hit: false };
-                obs.position.set((Math.floor(Math.random() * 3) - 1) * 3.5, isSolid ? 1.5 : 1, -(Math.random() * 850 + 30));
+                obs.userData = { ...obs.userData, type: isSolid ? 'solid' : 'npc', isThief: false, isPolice: false, hit: false };
+                obs.position.x = (Math.floor(Math.random() * 3) - 1) * 3.5;
+                obs.position.z = -(Math.random() * 850 + 30);
                 scene.add(obs);
                 obstacles.push(obs);
             }
 
-            // Injeta UM ladrão se for a sessão sorteada e ainda não tiver spawnado
             if (spawnThiefThisMatch) {
                 let npcs = obstacles.filter(o => o.userData.type === 'npc');
                 if (npcs.length > 0) {
                     let randomNpc = npcs[Math.floor(Math.random() * npcs.length)];
                     randomNpc.userData.isThief = true;
-                    spawnThiefThisMatch = false; // Garante que é só UM ladrão na partida inteira (ida ou volta)
+                    spawnThiefThisMatch = false; 
                 }
             }
         }
@@ -265,27 +303,25 @@
             document.getElementById('hud').style.display = 'block';
             document.getElementById('mobile-controls').style.display = 'flex';
 
-            // Atualiza sessão para o Ladrão
             metaData.sessionCount++;
             if (metaData.sessionCount >= metaData.nextThiefSession) {
                 spawnThiefThisMatch = true;
-                // Sorteia a próxima sessão com ladrão (daqui a 2 a 5 partidas)
                 metaData.nextThiefSession = metaData.sessionCount + Math.floor(Math.random() * 4) + 2; 
             }
             localStorage.setItem('sprunner_meta', JSON.stringify(metaData));
 
             if (difficulty === 'facil') {
                 playerStats = { money: 20, health: 100, stamina: 100, baseSpeed: 0.75, reaction: 0.2, bagPenalty: 1, bumps: 0, hasBackpack: true, inventory: "Mochila Vazia" };
-                playerMat.color.setHex(0x00ff88);
+                setStickFigureColor(playerMesh, 0x00ff88);
             } else if (difficulty === 'medio') {
                 playerStats = { money: 10, health: 100, stamina: 100, baseSpeed: 0.6, reaction: 0.1, bagPenalty: 1, bumps: 0, hasBackpack: false, inventory: "Bolsos" };
-                playerMat.color.setHex(0x0088ff);
+                setStickFigureColor(playerMesh, 0x0088ff);
             } else {
                 playerStats = { money: 3, health: 100, stamina: 100, baseSpeed: 0.45, reaction: 0.05, bagPenalty: 1, bumps: 0, hasBackpack: false, inventory: "Bolsos" };
-                playerMat.color.setHex(0xff3333);
+                setStickFigureColor(playerMesh, 0xff3333);
             }
 
-            playerMesh.position.set(0, 1, 0);
+            playerMesh.position.set(0, 0, 0); // Baseada no chão (y=0) agora
             currentLane = 0; phase = 'ida'; timer = 120; isStunned = false;
             generateObstacles();
             goalMesh.material.color.setHex(0xffcc00);
@@ -350,19 +386,16 @@
             document.getElementById('hud').style.display = 'none';
             document.getElementById('mobile-controls').style.display = 'none';
             
-            if (title === "VITÓRIA!") {
-                document.getElementById('end-title').style.color = "#00ff00";
-            } else if (title === "SOBREVIVEU...") {
-                document.getElementById('end-title').style.color = "#ffff00";
-            } else {
-                document.getElementById('end-title').style.color = "#ff3333";
-            }
+            if (title === "VITÓRIA!") document.getElementById('end-title').style.color = "#00ff00";
+            else if (title === "SOBREVIVEU...") document.getElementById('end-title').style.color = "#ffff00";
+            else document.getElementById('end-title').style.color = "#ff3333";
 
             document.getElementById('end-title').innerText = title;
             document.getElementById('end-desc').innerText = desc;
             document.getElementById('screen-gameover').style.display = 'flex';
         }
 
+        // --- LOOP DE ANIMAÇÃO ---
         function animate() {
             if (!gameActive) { if(timer > 0) requestAnimationFrame(animate); return; }
             requestAnimationFrame(animate);
@@ -377,86 +410,85 @@
             
             playerMesh.position.x += (currentLane * 3.5 - playerMesh.position.x) * playerStats.reaction;
 
+            // Pulo (Ajustado para o chão y=0)
             if (keys.Space && !isJumping) { isJumping = true; velocityY = 0.4; keys.Space = false; }
             if (isJumping) {
                 playerMesh.position.y += velocityY; velocityY -= 0.02;
-                if (playerMesh.position.y <= 1) { playerMesh.position.y = 1; isJumping = false; }
+                if (playerMesh.position.y <= 0) { playerMesh.position.y = 0; isJumping = false; }
             }
 
             let currentSpeed = playerStats.baseSpeed * playerStats.bagPenalty;
             if (keys.Up && playerStats.stamina > 0) { currentSpeed *= 1.5; playerStats.stamina -= 0.8; } 
             else if (playerStats.stamina < 100) playerStats.stamina += 0.3;
-            
             if (playerStats.stamina <= 0) currentSpeed = 0;
 
             playerMesh.position.z -= currentSpeed;
 
-            // SISTEMA DE VILÃO E POLÍCIA: Spawna polícia se for Vilão
+            // --- ANIMAÇÃO DOS BONECOS PALITO ---
+            const time = Date.now() * 0.015 * (currentSpeed > 0 ? currentSpeed : 0.1); // Balanço
+            if (currentSpeed > 0 && !isJumping) {
+                playerMesh.userData.leftArm.rotation.x = Math.sin(time) * 0.8;
+                playerMesh.userData.rightArm.rotation.x = -Math.sin(time) * 0.8;
+                playerMesh.userData.leftLeg.rotation.x = -Math.sin(time) * 0.8;
+                playerMesh.userData.rightLeg.rotation.x = Math.sin(time) * 0.8;
+            }
+
             if (playerStats.bumps >= 5) {
                 obstacles.forEach(obs => {
-                    // Transforma alguns NPCs distantes em Polícia
                     if (obs.userData.type === 'npc' && !obs.userData.isThief && !obs.userData.isPolice && obs.position.z < playerMesh.position.z - 80) {
-                        if (Math.random() < 0.03) { // 3% de chance por frame de virar polícia
+                        if (Math.random() < 0.03) { 
                             obs.userData.isPolice = true;
-                            obs.material = policeMat; 
+                            setStickFigureColor(obs, 0x0044ff); // Polícia Azul
                         }
                     }
                 });
             }
 
             camera.position.x = playerMesh.position.x * 0.5;
-            camera.position.y = playerMesh.position.y + 8;
-            camera.position.z = playerMesh.position.z + 12;
-            camera.lookAt(playerMesh.position.x, playerMesh.position.y, playerMesh.position.z - 5);
+            camera.position.y = playerMesh.position.y + 6;
+            camera.position.z = playerMesh.position.z + 10;
+            camera.lookAt(playerMesh.position.x, playerMesh.position.y + 1, playerMesh.position.z - 5);
 
             if (playerMesh.position.z <= goalMesh.position.z + 3) {
-                if (phase === 'ida') {
-                    handleBakery();
-                } else {
-                    if (playerStats.inventory.includes("Pães") || playerStats.inventory.includes("Sacola")) {
-                        endGame("VITÓRIA!", "Sucesso! Você garantiu o café da manhã!");
-                    } else {
-                        endGame("SOBREVIVEU...", "Você voltou vivo, mas sem os pães. O dia seguinte será mais difícil.");
-                    }
+                if (phase === 'ida') handleBakery();
+                else {
+                    if (playerStats.inventory.includes("Pães") || playerStats.inventory.includes("Sacola")) endGame("VITÓRIA!", "Sucesso! Você garantiu o café da manhã!");
+                    else endGame("SOBREVIVEU...", "Você voltou vivo, mas sem os pães. O dia seguinte será mais difícil.");
                 }
             }
 
-            // Lógica de Colisão
             obstacles.forEach(obs => {
+                // Anima NPCs
+                if (obs.userData.type === 'npc') {
+                    const npcTime = Date.now() * 0.005 + obs.position.z;
+                    obs.userData.leftArm.rotation.x = Math.sin(npcTime) * 0.3;
+                    obs.userData.rightArm.rotation.x = -Math.sin(npcTime) * 0.3;
+                    obs.userData.leftLeg.rotation.x = -Math.sin(npcTime) * 0.3;
+                    obs.userData.rightLeg.rotation.x = Math.sin(npcTime) * 0.3;
+                }
+
                 if (obs.userData.hit) return;
-                if (Math.abs(playerMesh.position.z - obs.position.z) < 1.5 && Math.abs(playerMesh.position.x - obs.position.x) < 1.5 && Math.abs(playerMesh.position.y - obs.position.y) < 2) {
+                
+                // Checagem de Colisão (ajustada para as novas alturas)
+                if (Math.abs(playerMesh.position.z - obs.position.z) < 1.2 && Math.abs(playerMesh.position.x - obs.position.x) < 1.2 && Math.abs(playerMesh.position.y - obs.position.y) < 2) {
                     obs.userData.hit = true;
                     
-                    if (obs.userData.isPolice) {
-                        endGame("PRESO!", "A polícia te pegou pelos seus atos de vandalismo!");
-                    }
+                    if (obs.userData.isPolice) endGame("PRESO!", "A polícia te pegou pelos seus atos de vandalismo!");
                     else if (obs.userData.isThief) {
-                        isStunned = true;
-                        playerStats.money = 0;
+                        isStunned = true; playerStats.money = 0;
                         playerStats.inventory = playerStats.hasBackpack ? "Mochila (Vazia)" : "Bolsos (Vazios)";
-                        timer -= 30;
-                        showMessage("VOCÊ FOI ASSALTADO!\nPerdeu itens, dinheiro e 30s!", 5000);
-                        playerMesh.position.z += 2;
-                        setTimeout(() => { isStunned = false; }, 5000);
+                        timer -= 30; showMessage("VOCÊ FOI ASSALTADO!\nPerdeu itens, dinheiro e 30s!", 5000);
+                        playerMesh.position.z += 2; setTimeout(() => { isStunned = false; }, 5000);
                     }
                     else if (obs.userData.type === 'npc') {
                         if (playerStats.bumps >= 5) {
-                            // Mecânica do Vilão: Rouba dinheiro no esbarrão
-                            playerStats.money += 2;
-                            showMessage("Você assaltou $2!", 1000);
-                            playerMesh.position.z += 0.5; // Tranco menor
+                            playerStats.money += 2; showMessage("Você assaltou $2!", 1000); playerMesh.position.z += 0.5;
                         } else {
-                            playerStats.bumps++;
-                            showMessage("Desculpe!", 500);
-                            playerMesh.position.z += 1;
-                            if (playerStats.bumps === 5) {
-                                showMessage("Você virou um VILÃO!\nA polícia está na cola!", 3000);
-                            }
+                            playerStats.bumps++; showMessage("Desculpe!", 500); playerMesh.position.z += 1;
+                            if (playerStats.bumps === 5) showMessage("Você virou um VILÃO!\nA polícia está na cola!", 3000);
                         }
                     } else if (obs.userData.type === 'solid') {
-                        playerStats.health -= 25;
-                        showMessage("AI! Bateu no poste!", 1000);
-                        playerMesh.position.z += 3;
+                        playerStats.health -= 25; showMessage("AI! Bateu no poste!", 1000); playerMesh.position.z += 3;
                         if (playerStats.health <= 0) endGame("Game Over", "Bateu a cabeça forte demais. Você desmaiou.");
                     }
                 }
